@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice Hotel</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #e9ecef;
+      margin: 0;
+      padding: 20px;
+      color: #000;
+    }
+
+    .toolbar {
+      max-width: 1000px;
+      margin: 0 auto 14px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .toolbar button {
+      padding: 9px 16px;
+      border: none;
+      border-radius: 5px;
+      background: #0d6efd;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .toolbar button:hover { background: #0b5ed7; }
+    .toolbar .info {
+      margin-left: auto;
+      font-size: 12px;
+      color: #555;
+      align-self: center;
+    }
+
+    .print-area {
+      background: #fff;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 26px 30px;
+      border-radius: 6px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+    }
+
+    /* ===== HEADER ===== */
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 0;
+    }
+    .header-top .logo {
+      height: 70px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .header-top .company-name {
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: #000;
+      text-align: right;
+      letter-spacing: 0.4px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .line-thick { height: 3px; background: #28583e; width: 100%; }
+    .line-space { height: 6px; background: #fff; width: 100%; }
+
+    /* ===== TITLE ===== */
+    .doc-title {
+      text-align: center;
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin: 16px 0;
+      padding: 12px 14px;
+      background: #28583e;
+      color: #fff;
+      text-transform: uppercase;
+    }
+
+    /* ===== INFO GRID ===== */
+    .info-grid {
+      border: 1px solid #e0e0e0;
+      border-radius: 3px;
+      overflow: hidden;
+      font-family: 'Roboto', Arial, sans-serif;
+      margin-bottom: 16px;
+    }
+    .info-grid table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 12px;
+    }
+    .info-grid td {
+      padding: 8px 12px;
+      vertical-align: middle;
+      border-bottom: 1px solid #e0e0e0;
+      border-right: 1px solid #e0e0e0;
+    }
+    .info-grid tr:last-child td { border-bottom: none; }
+    .info-grid td:last-child { border-right: none; }
+
+    .info-grid .head-cell {
+      text-align: center;
+      padding: 12px 14px;
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      border-right: none;
+    }
+    .info-grid .head-cell .head-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: #555;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .info-grid .head-cell .head-value {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      color: #28583e;
+      letter-spacing: 0.4px;
+    }
+    .info-grid .lbl {
+      background: #f4f4f4;
+      color: #000;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      width: 20%;
+    }
+    .info-grid .val {
+      background: #fff;
+      color: #111;
+      font-size: 12px;
+      font-weight: 700;
+      width: 30%;
+    }
+
+    /* ===== SECTION CARD ===== */
+    .section {
+      margin-bottom: 16px;
+      border-radius: 3px;
+      overflow: hidden;
+      border: 1px solid #e0e0e0;
+    }
+    .section-title {
+      background: #28583e;
+      color: #fff;
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 8px 12px;
+    }
+
+    /* ===== SEMUA TABEL ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      font-family: 'Roboto', Arial, sans-serif;
+      table-layout: fixed;
+    }
+    td, th {
+      padding: 8px 10px;
+      vertical-align: top;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    tr:last-child td { border-bottom: none; }
+
+    /* ===== ITEM TABLE (SAMA SEPERTI FLIGHT) ===== */
+    .item-table th {
+      background: #d9d9d9;
+      color: #000;
+      font-size: 11px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      padding: 8px 6px;
+      font-weight: 700;
+      border-bottom: 1px solid #bbb;
+      vertical-align: middle;
+    }
+    .item-table td {
+      border-bottom: 1px solid #e0e0e0;
+      padding: 10px 6px;
+      font-size: 12px;
+      vertical-align: middle;
+      text-align: center;
+    }
+    .item-table tr:nth-child(even) td { background: #f7f7f7; }
+    .item-table tr:nth-child(odd)  td { background: #ffffff; }
+
+    .item-table td.col-no,
+    .item-table td.col-pax,
+    .item-table td.col-qty,
+    .item-table td.col-price,
+    .item-table td.col-total {
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    /* ===== Kolom No: rata kanan ===== */
+    .item-table th:first-child,
+    .item-table td.col-no {
+      text-align: right;
+      padding-left: 6px;
+      padding-right: 4px;
+    }
+
+    /* ===== HEADER "Item(s) / Detail(s)": padding 18px ===== */
+    .item-table th:nth-child(2) {
+      text-align: left;
+      padding-left: 18px;
+      padding-right: 6px;
+    }
+
+    /* ===== Body kolom Item: padding 18px ===== */
+    .item-table td.col-item {
+      padding-left: 18px;
+      padding-right: 6px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .item-name {
+      font-weight: 700;
+      color: #28583e;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .item-detail {
+      font-size: 11.5px;
+      color: #333;
+      line-height: 1.5;
+    }
+    .item-detail strong { color: #111; }
+
+    /* ===== SUMMARY ===== */
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Roboto', Arial, sans-serif;
+    }
+    .summary-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 12px;
+    }
+    .summary-table .sum-label {
+      text-align: left;
+      font-weight: 500;
+      color: #333;
+      background: #f4f4f4;
+      width: 70%;
+    }
+    .summary-table .sum-value {
+      text-align: right;
+      font-weight: 700;
+      color: #111;
+      background: #f4f4f4;
+      width: 30%;
+      white-space: nowrap;
+      font-size: 16px;
+    }
+    .summary-table tr.grand-total td {
+      background: #113b25;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 12px 14px;
+      border: none;
+    }
+    .summary-table tr.grand-total .sum-value {
+      background: #113b25;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    /* ===== END LIST ===== */
+    .end-list {
+      text-align: right;
+      font-style: italic;
+      font-size: 11px;
+      color: #555;
+      margin-top: 6px;
+      font-family: 'Roboto', Arial, sans-serif;
+    }
+
+    /* ===== NOTES ===== */
+    .notes-section {
+      background: #113b25;
+      color: #fff;
+      padding: 14px 16px;
+      font-family: 'Roboto', Arial, sans-serif;
+      border-radius: 3px;
+      text-align: left;
+      margin-top: 16px;
+    }
+    .notes-section .notes-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      margin: 0 0 6px 0;
+      text-transform: uppercase;
+    }
+    .notes-section .notes-line {
+      font-size: 11.5px;
+      line-height: 1.5;
+      font-weight: 400;
+      margin: 0 0 6px 0;
+    }
+    .notes-section .notes-line:last-child { margin-bottom: 0; }
+    .notes-section .bank-block {
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    /* ===== SIGNATURE ===== */
+    .signature-section {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 30px;
+      margin-bottom: 10px;
+      font-family: 'Roboto', Arial, sans-serif;
+    }
+    .signature-box {
+      width: 260px;
+      text-align: center;
+      border: 1px solid #bbb;
+      border-radius: 3px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .signature-box .sign-label {
+      font-size: 12px;
+      color: #333;
+      padding: 6px 10px;
+      margin: 0;
+      font-weight: 500;
+      background: #f4f4f4;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .signature-box .sign-area {
+      width: 100%;
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+    }
+    .signature-box .sign-area img {
+      max-height: 85px;
+      max-width: 200px;
+      object-fit: contain;
+    }
+    .signature-box .sign-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #000;
+      padding: 6px 10px;
+      margin: 0;
+      background: #d9d9d9;
+      letter-spacing: 0.3px;
+      border-top: 1px solid #e0e0e0;
+    }
+    .signature-box .sign-title {
+      font-size: 11px;
+      color: #333;
+      padding: 5px 10px;
+      margin: 0;
+      background: #d9d9d9;
+      letter-spacing: 0.3px;
+      border-top: 1px solid #e0e0e0;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    /* ===== CONTACT LINES ===== */
+    .contact-lines { padding: 0; background: #fff; margin-top: 16px; }
+    .contact-line { height: 3px; background: #113b25; border-radius: 1px; }
+    .contact-line-1 { width: 210px; margin-top: 6px; }
+    .contact-line-2 { width: 255px; margin-top: 4px; margin-bottom: 10px; }
+
+    .contact-info {
+      padding: 0 0 8px 0;
+      background: #fff;
+      font-family: 'Roboto', Arial, sans-serif;
+      color: #000;
+    }
+    .contact-info p { font-size: 11.5px; line-height: 1.5; margin: 0 0 4px 0; }
+
+    /* ===== FOOTER ===== */
+    .doc-footer {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #333;
+      border-top: 1px solid #999;
+      padding-top: 6px;
+      font-family: 'Roboto', Arial, sans-serif;
+    }
+
+    /* ===== PRINT ===== */
+    @media print {
+      @page { size: A4 portrait; margin: 10mm; }
+      body { background: #fff; margin: 0; padding: 0; }
+      .no-print { display: none !important; }
+      .print-area {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        border-radius: 0;
+      }
+      .doc-title,
+      .section-title,
+      .notes-section,
+      .contact-line,
+      .line-thick,
+      .item-table th,
+      .info-grid .lbl,
+      .summary-table .sum-label,
+      .summary-table .sum-value,
+      .summary-table tr.grand-total td,
+      .signature-box .sign-label,
+      .signature-box .sign-name,
+      .signature-box .sign-title {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar no-print">
+    <button onclick="window.print()">🖨️ Print / Save PDF</button>
+    <button onclick="exportPDF()">⬇️ Export PDF</button>
+    <span class="info">Hotel Invoice</span>
+  </div>
+
+  <main id="print-area" class="print-area">
+
+    <!-- HEADER -->
+    <div class="header-top">
+      <img class="logo" src="Logooci.png" alt="Outventure Cakrawala Indonesia">
+      <div class="company-name">PT OUTVENTURE CAKRAWALA INDONESIA</div>
+    </div>
+    <div class="line-thick"></div>
+    <div class="line-space"></div>
+
+    <h1 class="doc-title">Invoice</h1>
+
+    <!-- ===== INFO GRID ===== -->
+    <div class="info-grid">
+      <table>
+        <colgroup>
+          <col style="width: 20%;">
+          <col style="width: 30%;">
+          <col style="width: 20%;">
+          <col style="width: 30%;">
+        </colgroup>
+
+        <!-- Baris 1: Invoice No | To Client -->
+        <tr>
+          <td class="head-cell" colspan="2">
+            <span class="head-label">Invoice No</span>
+            <span class="head-value" id="invoiceNo">INV/OCI/2026/H/0001</span>
+          </td>
+          <td class="head-cell" colspan="2">
+            <span class="head-label">Client</span>
+            <span class="head-value" id="toClient">PEMKAB AGAM</span>
+          </td>
+        </tr>
+
+        <!-- Baris 2: Date | Email -->
+        <tr>
+          <td class="lbl">Date</td>
+          <td class="val" id="invDate">12 SEPTEMBER 2026</td>
+          <td class="lbl">Email</td>
+          <td class="val" id="invEmail">—</td>
+        </tr>
+
+        <!-- Baris 3: Payment Method | Phone -->
+        <tr>
+          <td class="lbl">Payment Method</td>
+          <td class="val" id="invPayment">TRANSFER</td>
+          <td class="lbl">Phone</td>
+          <td class="val" id="invPhone">—</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- ===== ITEM TABLE (SAMA SEPERTI FLIGHT) ===== -->
+    <div class="section">
+      <div class="section-title">Item Details</div>
+      <table class="item-table">
+        <colgroup>
+          <col style="width: 4%;">   <!-- No -->
+          <col style="width: 31%;">  <!-- Item / Detail -->
+          <col style="width: 25%;">  <!-- Pax -->
+          <col style="width: 8%;">   <!-- Qty -->
+          <col style="width: 16%;">  <!-- Price -->
+          <col style="width: 16%;">  <!-- Total -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Item(s) / Detail(s)</th>
+            <th>Pax</th>
+            <th>Qty</th>
+            <th>Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="itemBody">
+          <tr>
+            <td class="col-no" contenteditable="true">1</td>
+            <td class="col-item">
+              <span class="item-name" id="itemHotel">WYNDHAM PANBIL BATAM</span>
+              <span class="item-detail" id="itemDetail">
+                EXECUTIVE LAKE DOUBLE PROMO<br>
+                1 NIGHTS<br>
+                11 - 12.09.2026
+              </span>
+            </td>
+            <td class="col-pax" id="itemPax" contenteditable="true">MR. BENNI WARLIS</td>
+            <td class="col-qty" id="itemQty" contenteditable="true">1</td>
+            <td class="col-price" id="itemPrice" contenteditable="true">2.900.000</td>
+            <td class="col-total" id="itemTotal" contenteditable="true">2.900.000</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="end-list">end of list <span id="itemCount">1</span> item(s) listed</div>
+    </div>
+
+    <!-- ===== SUMMARY ===== -->
+    <div class="section">
+      <table class="summary-table">
+        <colgroup>
+          <col style="width: 70%;">
+          <col style="width: 30%;">
+        </colgroup>
+        <tr>
+          <td class="sum-label">SUB TOTAL</td>
+          <td class="sum-value" id="subTotal">2.900.000,-</td>
+        </tr>
+        <tr>
+          <td class="sum-label">VOUCHER</td>
+          <td class="sum-value" id="voucher">-</td>
+        </tr>
+        <tr class="grand-total">
+          <td class="sum-label" style="color:#fff; background:#113b25;">GRAND TOTAL</td>
+          <td class="sum-value" id="grandTotal">2.900.000,-</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- ===== NOTES ===== -->
+    <div class="notes-section">
+      <div class="bank-block">
+        <p class="notes-title">Bank Account:</p>
+        <p class="notes-line">PT OUTVENTURE CAKRAWALA INDONESIA</p>
+        <p class="notes-line">BANK MANDIRI 127-00-1445-2823</p>
+      </div>
+
+      <p class="notes-title">Confirmation:</p>
+      <p class="notes-line">Please Contact Us for Payment Confirmation &amp; Bills</p>
+    </div>
+
+    <!-- ===== SIGNATURE ===== -->
+    <div class="signature-section">
+      <div class="signature-box">
+        <p class="sign-label">Hormat Kami,</p>
+        <div class="sign-area">
+          <img src="Ttd ayu.png" alt="Tanda Tangan Ayu Lian Putri">
+        </div>
+        <p class="sign-name" id="directorName">AYU LIAN PUTRI</p>
+        <p class="sign-title">Director</p>
+      </div>
+    </div>
+
+    <!-- CONTACT LINES -->
+    <div class="contact-lines">
+      <div class="contact-line contact-line-1"></div>
+      <div class="contact-line contact-line-2"></div>
+    </div>
+
+    <div class="contact-info">
+      <p>Menara 165, Lantai 4</p>
+      <p>Jl. TB. Simatupang Kav.1, Pasar Minggu, Jakarta Selatan</p>
+      <p>outventurecakrawalaidn@gmail.com</p>
+    </div>
+
+    <footer class="doc-footer">
+      <span>Dicetak: <span id="printDate"></span></span>
+      <span>Halaman 1 dari 1</span>
+    </footer>
+
+  </main>
+
+  <script>
+    document.getElementById('printDate').textContent =
+      new Date().toLocaleString('id-ID', {
+        day: '2-digit', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+
+    function exportPDF() {
+      const element = document.getElementById('print-area');
+      const opt = {
+        margin: [8, 8, 8, 8],
+        filename: 'Invoice-Hotel.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
+  </script>
+
+</body>
+</html>

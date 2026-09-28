@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaction Bill Summary - Hotel</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #e9ecef;
+      margin: 0;
+      padding: 20px;
+      color: #000;
+    }
+
+    .toolbar {
+      max-width: 1300px;
+      margin: 0 auto 14px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .toolbar button {
+      padding: 9px 16px;
+      border: none;
+      border-radius: 5px;
+      background: #0d6efd;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .toolbar button:hover { background: #0b5ed7; }
+    .toolbar .info {
+      margin-left: auto;
+      font-size: 12px;
+      color: #555;
+      align-self: center;
+    }
+
+    .print-area {
+      background: #fff;
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 26px 30px;
+      border-radius: 6px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+      gap: 16px;
+    }
+    .header-top .logo {
+      height: 70px;
+      width: auto;
+      object-fit: contain;
+    }
+    .header-top .company-name {
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #28583e;
+      text-align: right;
+      letter-spacing: 0.4px;
+      line-height: 1.4;
+      align-self: flex-start;
+      padding-top: 6px;
+    }
+
+    .line-thick { height: 3px; background: #28583e; width: 100%; }
+    .line-space { height: 6px; background: #fff; width: 100%; }
+
+    .doc-title {
+      text-align: center;
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 23px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin: 0 0 16px 0;
+      padding: 12px 14px;
+      background: #28583e;
+      color: #fff;
+      border-radius: 3px;
+    }
+
+    /* ===== INFO ROW (grid 3 kolom, tetap sama) ===== */
+    .info-row {
+      display: grid;
+      grid-template-columns: 4% 64% 32%;
+      align-items: flex-start;
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+    .info-row .spacer { grid-column: 1; }
+    .info-row .left   { grid-column: 2; text-align: left; }
+    .info-row .right  { grid-column: 3; text-align: left; white-space: nowrap; }
+
+    .info-block { margin-bottom: 8px; }
+    .info-label { text-transform: uppercase; font-weight: 400; }
+    .info-value-bold { font-weight: 700; }
+
+    /* ===== TABEL ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      table-layout: fixed;
+      margin-top: 12px;
+    }
+    th, td {
+      border: 1px solid #000;
+      padding: 5px 6px;
+      vertical-align: top;
+      word-wrap: break-word;
+    }
+    th {
+      background: #28583e;
+      color: #fff;
+      text-align: center;
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.3px;
+    }
+    td { text-align: left; }
+    td.center { text-align: center; }
+    td.right  { text-align: right; }
+
+    tbody tr:nth-child(odd)  { background: #ffffff; }
+    tbody tr:nth-child(even) { background: #d9d9d9; }
+
+    [contenteditable="true"] { outline: none; min-width: 20px; cursor: text; }
+    [contenteditable="true"]:focus {
+      background: #fff3cd;
+      box-shadow: inset 0 0 0 1px #ffc107;
+    }
+
+    .total-section {
+      margin-top: 18px;
+      background: #113b25;
+      color: #fff;
+      padding: 12px 14px;
+      text-align: center;
+      font-family: 'Roboto', Arial, sans-serif;
+      border-radius: 3px;
+    }
+    .total-label {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+    .total-amount {
+      font-size: 25px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+    .terbilang-label {
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      margin-top: 8px;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+    }
+    .terbilang-value {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      line-height: 1.4;
+      text-transform: capitalize;
+    }
+
+    .notes-space { height: 12px; background: #fff; }
+
+    .notes-section {
+      background: #113b25;
+      color: #fff;
+      padding: 14px 16px;
+      font-family: 'Roboto', Arial, sans-serif;
+      border-radius: 3px 3px 0 0;
+      text-align: left;
+    }
+    .notes-section .notes-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      margin: 0 0 4px 0;
+      text-transform: uppercase;
+    }
+    .notes-section .notes-line {
+      font-size: 12px;
+      line-height: 1.2;
+      font-weight: 400;
+      margin: 0 0 4px 0;
+      letter-spacing: 0.2px;
+    }
+    .notes-section .bank-block { margin-top: 15px; }
+    .notes-section .bank-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      margin: 0 0 4px 0;
+      text-transform: uppercase;
+    }
+    .notes-section .bank-line {
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.3;
+      margin: 0 0 4px 0;
+      letter-spacing: 0.5px;
+    }
+
+    .contact-lines { padding: 0; background: #fff; }
+    .contact-line {
+      height: 3px;
+      background: #113b25;
+      border-radius: 1px;
+    }
+    .contact-line-1 { width: 210px; margin-top: 6px; }
+    .contact-line-2 { width: 255px; margin-top: 4px; margin-bottom: 10px; }
+
+    .contact-info {
+      padding: 0 0 8px 0;
+      background: #fff;
+      font-family: 'Roboto', Arial, sans-serif;
+      color: #000;
+    }
+    .contact-info p {
+      font-size: 12px;
+      line-height: 1.5;
+      margin: 0 0 4px 0;
+      letter-spacing: 0.3px;
+    }
+
+    .doc-footer {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #333;
+      border-top: 1px solid #999;
+      padding-top: 6px;
+    }
+
+    @media print {
+      @page { size: A4 landscape; margin: 10mm; }
+      body { background: #fff; margin: 0; padding: 0; }
+      .no-print { display: none !important; }
+      .print-area {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        border-radius: 0;
+      }
+      table { font-size: 9pt; }
+      th, td { padding: 3px 4px; }
+      thead { display: table-header-group; }
+      tr { page-break-inside: avoid; }
+      [contenteditable="true"]:focus {
+        background: transparent;
+        box-shadow: none;
+      }
+      tbody tr:nth-child(odd)  { background: #ffffff; }
+      tbody tr:nth-child(even) { background: #d9d9d9; }
+
+      .doc-title,
+      th,
+      .total-section,
+      .notes-section,
+      .contact-line,
+      .line-thick,
+      .line-thin {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .doc-title  { font-size: 23px; }
+      .info-row   { font-size: 11px; }
+      .total-label  { font-size: 12px; }
+      .total-amount { font-size: 23px; }
+      .terbilang-label,
+      .terbilang-value { font-size: 12px; }
+
+      .header-top .logo { height: 60px; }
+      .header-top .company-name { font-size: 11px; }
+
+      .notes-section .notes-title,
+      .notes-section .notes-line,
+      .notes-section .bank-title,
+      .notes-section .bank-line,
+      .contact-info p { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar no-print">
+    <button onclick="window.print()">🖨️ Print / Save PDF</button>
+    <button onclick="exportPDF()">⬇️ Export PDF</button>
+    <button onclick="addRow()">➕ Tambah Baris</button>
+    <span class="info">Klik teks di dalam tabel untuk mengubah isi</span>
+  </div>
+
+  <main id="print-area" class="print-area">
+
+    <div class="header-top">
+      <img class="logo" src="Logooci.png" alt="Outventure Cakrawala Indonesia">
+      <div class="company-name">PT OUTVENTURE CAKRAWALA INDONESIA</div>
+    </div>
+    <div class="line-thick"></div>
+    <div class="line-space"></div>
+    <div class="line-thin"></div>
+
+    <h1 class="doc-title" contenteditable="true">Transaction Bill Summary</h1>
+
+    <!-- ===== INFO (Category : HOTEL) ===== -->
+    <div class="info-block">
+      <div class="info-row">
+        <div class="spacer"></div>
+        <div class="left">
+          <span class="info-label" contenteditable="true">Travel :</span>
+          <span class="info-value-bold" contenteditable="true">PT. OUTVENTURE CAKRAWALA INDONESIA</span>
+        </div>
+        <div class="right">
+          <span class="info-label" contenteditable="true">Category :</span>
+          <span class="info-value-bold" contenteditable="true">HOTEL</span>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="spacer"></div>
+        <div class="left">
+          <span class="info-label" contenteditable="true">Client :</span>
+          <span class="info-value-bold" contenteditable="true">PEMKAB AGAM</span>
+        </div>
+        <div class="right">
+          <span class="info-label" contenteditable="true">Phone :</span>
+          <span class="info-value-bold" contenteditable="true">0812 7739 8458</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TABEL HOTEL ===== -->
+    <table>
+      <colgroup>
+        <col style="width: 4%;">   <!-- NO -->
+        <col style="width: 14%;">  <!-- INVOICE -->
+        <col style="width: 18%;">  <!-- NAMA -->
+        <col style="width: 6%;">   <!-- QTY -->
+        <col style="width: 18%;">  <!-- HOTEL -->
+        <col style="width: 22%;">  <!-- ADDRESS -->
+        <col style="width: 18%;">  <!-- PRICE -->
+      </colgroup>
+      <thead>
+        <tr>
+          <th contenteditable="true">NO</th>
+          <th contenteditable="true">INVOICE</th>
+          <th contenteditable="true">NAMA</th>
+          <th contenteditable="true">QTY</th>
+          <th contenteditable="true">HOTEL</th>
+          <th contenteditable="true">ADDRESS</th>
+          <th contenteditable="true">PRICE</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+
+    <div class="total-section">
+      <div class="total-label" contenteditable="true">TOTAL TAGIHAN</div>
+      <div class="total-amount" id="totalAmount" contenteditable="true">IDR 6.080.000</div>
+
+      <div class="terbilang-label">TERBILANG :</div>
+      <div class="terbilang-value" id="terbilangValue">Enam Juta Delapan Puluh Ribu Rupiah</div>
+    </div>
+
+    <div class="notes-space"></div>
+
+    <div class="notes-section">
+      <p class="notes-title">Notes:</p>
+      <p class="notes-line">The listed price includes the travel service margin.</p>
+      <p class="notes-line">Payments can be made to the PT. Outventure Cakrawala Indonesia account.</p>
+      <p class="notes-line">For further information, please contact us using the details below.</p>
+
+      <div class="bank-block">
+        <p class="bank-title">BANK ACCOUNT</p>
+        <p class="bank-line">PT OUTVENTURE CAKRAWALA INDONESIA</p>
+        <p class="bank-line">BANK MANDIRI 127-00-1445-2823</p>
+      </div>
+    </div>
+
+    <div class="contact-lines">
+      <div class="contact-line contact-line-1"></div>
+      <div class="contact-line contact-line-2"></div>
+    </div>
+
+    <div class="contact-info">
+      <p>Menara 165, Lantai 4</p>
+      <p>Jl. TB. Simatupang Kav.1, Pasar Minggu, Jakarta Selatan</p>
+      <p>outventurecakrawalaidn@gmail.com</p>
+    </div>
+
+    <footer class="doc-footer">
+      <span>Dicetak: <span id="printDate"></span></span>
+      <span>Halaman 1 dari 1</span>
+    </footer>
+
+  </main>
+
+  <script>
+    document.getElementById('printDate').textContent =
+      new Date().toLocaleString('id-ID', {
+        day: '2-digit', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+
+    const TOTAL_ROWS = 40;
+
+    // ===== Data contoh HOTEL =====
+    const sampleData = [
+      { invoice: 'INV/OCI/2026/H001', nama: 'Nama Tamu 1', qty: '2', hotel: 'Hotel Indonesia Kempinski', address: 'Jl. M.H. Thamrin No.1, Jakarta Pusat', price: 'IDR 1.500.000' },
+      { invoice: 'INV/OCI/2026/H002', nama: 'Nama Tamu 2', qty: '1', hotel: 'Grand Hyatt Jakarta',        address: 'Jl. M.H. Thamrin Kav. 28-30, Jakarta',  price: 'IDR 1.850.000' },
+      { invoice: 'INV/OCI/2026/H003', nama: 'Nama Tamu 3', qty: '3', hotel: 'Aston Priority Simatupang', address: 'Jl. TB Simatupang No.21, Jakarta Selatan', price: 'IDR 750.000'   },
+      { invoice: 'INV/OCI/2026/H004', nama: 'Nama Tamu 4', qty: '2', hotel: 'Swiss-Belhotel Pondok Indah', address: 'Jl. Metro Duta Kav. UE, Jakarta Selatan',  price: 'IDR 980.000'   }
+    ];
+
+    function buildTable() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+      for (let i = 1; i <= TOTAL_ROWS; i++) {
+        const data = sampleData[i - 1] || {
+          invoice: 'INV/OCI/2026/H' + String(i).padStart(3, '0'),
+          nama: 'Nama Tamu ' + i,
+          qty: '0',
+          hotel: 'Nama Hotel',
+          address: 'Alamat Hotel',
+          price: 'IDR 0'
+        };
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td contenteditable="true" class="center">${i}</td>
+          <td contenteditable="true" class="center">${data.invoice}</td>
+          <td contenteditable="true">${data.nama}</td>
+          <td contenteditable="true" class="center">${data.qty}</td>
+          <td contenteditable="true">${data.hotel}</td>
+          <td contenteditable="true">${data.address}</td>
+          <td contenteditable="true" class="center">${data.price}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+    buildTable();
+
+    function terbilang(n) {
+      n = Math.floor(Math.abs(n));
+      const satuan = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima',
+                      'Enam', 'Tujuh', 'Delapan', 'Sembilan', 'Sepuluh', 'Sebelas'];
+      if (n < 12)               return satuan[n];
+      if (n < 20)               return terbilang(n - 10) + ' Belas';
+      if (n < 100)              return terbilang(Math.floor(n / 10)) + ' Puluh ' + terbilang(n % 10);
+      if (n < 200)              return 'Seratus ' + terbilang(n - 100);
+      if (n < 1000)             return terbilang(Math.floor(n / 100)) + ' Ratus ' + terbilang(n % 100);
+      if (n < 2000)             return 'Seribu ' + terbilang(n - 1000);
+      if (n < 1000000)          return terbilang(Math.floor(n / 1000)) + ' Ribu ' + terbilang(n % 1000);
+      if (n < 1000000000)       return terbilang(Math.floor(n / 1000000)) + ' Juta ' + terbilang(n % 1000000);
+      if (n < 1000000000000)    return terbilang(Math.floor(n / 1000000000)) + ' Miliar ' + terbilang(n % 1000000000);
+      if (n < 1000000000000000) return terbilang(Math.floor(n / 1000000000000)) + ' Triliun ' + terbilang(n % 1000000000000);
+      return '';
+    }
+    function parseAmount(str) {
+      const clean = (str || '').replace(/[^\d]/g, '');
+      return parseInt(clean || '0', 10);
+    }
+    function updateTerbilang() {
+      const totalEl = document.getElementById('totalAmount');
+      const terbilangEl = document.getElementById('terbilangValue');
+      const amount = parseAmount(totalEl.textContent);
+      const kata = terbilang(amount).replace(/\s+/g, ' ').trim();
+      terbilangEl.textContent = kata ? kata + ' Rupiah' : '-';
+    }
+    updateTerbilang();
+    document.getElementById('totalAmount').addEventListener('input', updateTerbilang);
+    document.getElementById('totalAmount').addEventListener('blur', updateTerbilang);
+
+    function addRow() {
+      const tbody = document.getElementById('tableBody');
+      const rowCount = tbody.rows.length + 1;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td contenteditable="true" class="center">${rowCount}</td>
+        <td contenteditable="true" class="center">INV/OCI/2026/H${String(rowCount).padStart(3, '0')}</td>
+        <td contenteditable="true">Nama Tamu</td>
+        <td contenteditable="true" class="center">0</td>
+        <td contenteditable="true">Nama Hotel</td>
+        <td contenteditable="true">Alamat Hotel</td>
+        <td contenteditable="true" class="center">IDR 0</td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    function exportPDF() {
+      const element = document.getElementById('print-area');
+      const opt = {
+        margin: [8, 8, 8, 8],
+        filename: 'Transaction-Bill-Summary-Hotel.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
+  </script>
+
+</body>
+</html>

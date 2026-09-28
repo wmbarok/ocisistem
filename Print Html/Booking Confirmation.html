@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking Confirmation - Hotel</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #e9ecef;
+      margin: 0;
+      padding: 20px;
+      color: #000;
+    }
+
+    .toolbar {
+      max-width: 1000px;
+      margin: 0 auto 14px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .toolbar button {
+      padding: 9px 16px;
+      border: none;
+      border-radius: 5px;
+      background: #0d6efd;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .toolbar button:hover { background: #0b5ed7; }
+    .toolbar .info {
+      margin-left: auto;
+      font-size: 12px;
+      color: #555;
+      align-self: center;
+    }
+
+    .print-area {
+      background: #fff;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 26px 30px;
+      border-radius: 6px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+    }
+
+    /* ===== HEADER ===== */
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 0;
+    }
+    .header-top .logo {
+      height: 70px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .header-top .company-name {
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: #000;
+      text-align: right;
+      letter-spacing: 0.4px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .line-thick { height: 3px; background: #28583e; width: 100%; }
+    .line-space { height: 6px; background: #fff; width: 100%; }
+
+    /* ===== TITLE ===== */
+    .doc-title {
+      text-align: center;
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 23px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin: 16px 0;
+      padding: 12px 14px;
+      background: #28583e;
+      color: #fff;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+
+    /* ===== SECTION CARD ===== */
+    .section {
+      margin-bottom: 16px;
+      border-radius: 3px;
+      overflow: hidden;
+      border: 1px solid #e0e0e0;
+    }
+    .section-title {
+      background: #28583e;
+      color: #fff;
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 8px 12px;
+    }
+
+    /* ===== SEMUA TABEL: FIXED LAYOUT ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      font-family: 'Roboto', Arial, sans-serif;
+      table-layout: fixed;
+    }
+    td, th {
+      padding: 8px 10px;
+      vertical-align: top;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    tr:last-child td { border-bottom: none; }
+
+    .label-cell {
+      background: #f4f4f4;
+      color: #555;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      font-weight: 500;
+    }
+    .value-cell {
+      color: #111;
+      font-size: 12px;
+      font-weight: 500;
+      background: #fff;
+    }
+
+    /* Hapus zebra striping di section Booking Info */
+    .booking-info-table td { background: #fff; }
+    .booking-info-table .label-cell { background: #f4f4f4; }
+
+    .status-confirmed {
+      font-weight: 700;
+      color: #1b8a3a;
+      text-transform: uppercase;
+    }
+    .booking-ref {
+      font-weight: 700;
+      color: #28583e;
+      letter-spacing: 0.8px;
+    }
+
+    /* ===== BARIS 1: Booking Ref | Status (2 kolom CENTER) ===== */
+    .pair-row td {
+      text-align: center;
+      vertical-align: middle;
+      padding: 12px 10px;
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .pair-row .pair-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: #555;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .pair-row .pair-value {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .pair-row .booking-ref { color: #28583e; }
+    .pair-row .status-confirmed { color: #1b8a3a; }
+
+    /* ===== HOTEL INFO ===== */
+    .hotel-info {
+      padding: 12px 14px;
+      background: #fff;
+      font-family: 'Roboto', Arial, sans-serif;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .hotel-info .hotel-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #28583e;
+      margin-bottom: 4px;
+    }
+    .hotel-info .hotel-address {
+      font-size: 12px;
+      color: #333;
+      line-height: 1.5;
+    }
+
+    /* ===== DATA TABLE (center simetris) ===== */
+    .data-table th {
+      background: #d9d9d9;
+      color: #000;
+      font-size: 11px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      padding: 8px 6px;
+      font-weight: 700;
+      border-bottom: 1px solid #bbb;
+      vertical-align: middle;
+    }
+    .data-table td {
+      border-bottom: 1px solid #e0e0e0;
+      padding: 8px 6px;
+      font-size: 12px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .data-table tr:nth-child(even) td { background: #f7f7f7; }
+    .data-table tr:nth-child(odd)  td { background: #ffffff; }
+
+    /* ===== NOTES (kotak hijau) ===== */
+    .notes-section {
+      background: #113b25;
+      color: #fff;
+      padding: 14px 16px;
+      font-family: 'Roboto', Arial, sans-serif;
+      border-radius: 3px;
+      text-align: left;
+      margin-top: 16px;
+    }
+    .notes-section .cancellation-block {
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    .notes-section .cancellation-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      margin: 0 0 4px 0;
+      text-transform: uppercase;
+    }
+    .notes-section .cancellation-line {
+      font-size: 11.5px;
+      line-height: 1.5;
+      font-weight: 400;
+      margin: 0;
+    }
+    .notes-section .notes-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      margin: 0 0 6px 0;
+      text-transform: uppercase;
+    }
+    .notes-section .notes-line {
+      font-size: 11.5px;
+      line-height: 1.5;
+      font-weight: 400;
+      margin: 0 0 6px 0;
+    }
+    .notes-section .notes-line:last-child { margin-bottom: 0; }
+
+    /* ===== TEKS GENERATED ===== */
+    .generated-text {
+      text-align: center;
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 11px;
+      font-style: italic;
+      color: #555;
+      margin: 10px 0 0 0;
+      letter-spacing: 0.2px;
+    }
+
+    /* ===== CONTACT LINES ===== */
+    .contact-lines { padding: 0; background: #fff; margin-top: 16px; }
+    .contact-line { height: 3px; background: #113b25; border-radius: 1px; }
+    .contact-line-1 { width: 210px; margin-top: 6px; }
+    .contact-line-2 { width: 255px; margin-top: 4px; margin-bottom: 10px; }
+
+    .contact-info {
+      padding: 0 0 8px 0;
+      background: #fff;
+      font-family: 'Roboto', Arial, sans-serif;
+      color: #000;
+    }
+    .contact-info p { font-size: 11.5px; line-height: 1.5; margin: 0 0 4px 0; }
+
+    /* ===== FOOTER ===== */
+    .doc-footer {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #333;
+      border-top: 1px solid #999;
+      padding-top: 6px;
+      font-family: 'Roboto', Arial, sans-serif;
+    }
+
+    /* ===== PRINT ===== */
+    @media print {
+      @page { size: A4 portrait; margin: 10mm; }
+      body { background: #fff; margin: 0; padding: 0; }
+      .no-print { display: none !important; }
+      .print-area {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        border-radius: 0;
+      }
+      .doc-title,
+      .section-title,
+      .notes-section,
+      .contact-line,
+      .line-thick,
+      .data-table th,
+      .label-cell {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar no-print">
+    <button onclick="window.print()">🖨️ Print / Save PDF</button>
+    <button onclick="exportPDF()">⬇️ Export PDF</button>
+    <span class="info">Hotel Booking Confirmation</span>
+  </div>
+
+  <main id="print-area" class="print-area">
+
+    <!-- HEADER -->
+    <div class="header-top">
+      <img class="logo" src="Logooci.png" alt="Outventure Cakrawala Indonesia">
+      <div class="company-name">PT OUTVENTURE CAKRAWALA INDONESIA</div>
+    </div>
+    <div class="line-thick"></div>
+    <div class="line-space"></div>
+
+    <h1 class="doc-title">Booking Confirmation</h1>
+
+    <!-- ===== BOOKING INFO ===== -->
+    <div class="section">
+      <table class="booking-info-table">
+        <colgroup>
+          <col style="width: 20%;">
+          <col style="width: 30%;">
+          <col style="width: 20%;">
+          <col style="width: 30%;">
+        </colgroup>
+
+        <!-- Baris 1: BOOKING REF | STATUS -->
+        <tr class="pair-row">
+          <td colspan="2">
+            <span class="pair-label">Booking Reference No</span>
+            <span class="pair-value booking-ref" id="bookingRef">10930121899</span>
+          </td>
+          <td colspan="2">
+            <span class="pair-label">Status</span>
+            <span class="pair-value status-confirmed" id="bookingStatus">CONFIRMED</span>
+          </td>
+        </tr>
+
+        <!-- ===== Baris 2: CLIENT | NATIONALITY (ditukar) ===== -->
+        <tr>
+          <td class="label-cell">Client</td>
+          <td class="value-cell" id="clientName">PEMKAB AGAM</td>
+          <td class="label-cell">Nationality</td>
+          <td class="value-cell" id="nationality">INDONESIA</td>
+        </tr>
+
+        <!-- ===== Baris 3: CHANNEL | ISSUED DATE (ditukar) ===== -->
+        <tr>
+          <td class="label-cell">Channel</td>
+          <td class="value-cell" id="channel">GLOBAL TIKET NETWORK</td>
+          <td class="label-cell">Issued Date</td>
+          <td class="value-cell" id="issuedDate">September 12, 2026</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- HOTEL INFORMATION -->
+    <div class="section">
+      <div class="section-title">Property Information</div>
+      <div class="hotel-info">
+        <div class="hotel-name" id="hotelName">Apartment Panbil Residence</div>
+        <div class="hotel-address" id="hotelAddress">
+          JI. Ahmad Yani, Muka Kuning, Kec. Sei Beduk, Kota Batam, Kepulauan Riau
+        </div>
+      </div>
+    </div>
+
+    <!-- ROOM DETAILS -->
+    <div class="section">
+      <div class="section-title">Room Details</div>
+      <table class="data-table">
+        <colgroup>
+          <col style="width: 15%;">
+          <col style="width: 20%;">
+          <col style="width: 15%;">
+          <col style="width: 17%;">
+          <col style="width: 17%;">
+          <col style="width: 16%;">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>No. of Room(s)</th>
+            <th>Room Type</th>
+            <th>Meal(s)</th>
+            <th>Arrival</th>
+            <th>Departure</th>
+            <th>Extra Bed(s)</th>
+          </tr>
+        </thead>
+        <tbody id="roomDetailsBody">
+          <tr>
+            <td id="roomCount">1</td>
+            <td id="roomType">Junior Suite</td>
+            <td id="mealType">Breakfast</td>
+            <td id="arrivalDate">11/09/2026</td>
+            <td id="departureDate">12/09/2026</td>
+            <td id="extraBed">NO</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- GUEST DETAILS -->
+    <div class="section">
+      <div class="section-title">Guest Details</div>
+      <table class="data-table">
+        <colgroup>
+          <col style="width: 15%;">
+          <col style="width: 30%;">
+          <col style="width: 55%;">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Room No.</th>
+            <th>Room Type</th>
+            <th>Guest(s) / Child(s)</th>
+          </tr>
+        </thead>
+        <tbody id="guestDetailsBody">
+          <tr>
+            <td id="guestRoomNo">1</td>
+            <td id="guestRoomType">Junior Suite</td>
+            <td id="guestName">OFRIZON / N/A</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- REQUEST -->
+    <div class="section">
+      <div class="section-title">Request</div>
+      <div class="hotel-info">
+        <div class="hotel-address" id="requestText">&mdash;</div>
+      </div>
+    </div>
+
+    <!-- NOTES -->
+    <div class="notes-section">
+      <div class="cancellation-block">
+        <p class="cancellation-title">Cancellation Policy:</p>
+        <p class="cancellation-line" id="cancellationPolicy">
+          You'll be charged the cancellation fee if you don't check in.
+        </p>
+      </div>
+
+      <p class="notes-title">Notes:</p>
+      <p class="notes-line" id="notesLine1">
+        At check-in, you must present a valid photo ID with your address confirming the same name as the lead guest on the booking. For bookings paid with a credit card, you may also need to present the card used to make the payment. Failure to do so may result in the hotel requesting additional payment or your reservation not being honored.
+      </p>
+      <p class="notes-line" id="notesLine2">
+        The total price for this booking does not include mini-bar items, telephone usage, laundry service, etc. The property will bill you directly. In cases where Breakfast is included with the room rate, please note that certain properties may charge extra for children travelling with their parents. If applicable, the property will bill you directly. Upon arrival, if you have any questions, please verify with the property.
+      </p>
+    </div>
+
+    <!-- TEKS GENERATED -->
+    <p class="generated-text">
+      // this document is generated by the system, signature is not required //
+    </p>
+
+    <!-- CONTACT LINES -->
+    <div class="contact-lines">
+      <div class="contact-line contact-line-1"></div>
+      <div class="contact-line contact-line-2"></div>
+    </div>
+
+    <div class="contact-info">
+      <p>Menara 165, Lantai 4</p>
+      <p>Jl. TB. Simatupang Kav.1, Pasar Minggu, Jakarta Selatan</p>
+      <p>outventurecakrawalaidn@gmail.com</p>
+    </div>
+
+    <footer class="doc-footer">
+      <span>Dicetak: <span id="printDate"></span></span>
+      <span>Halaman 1 dari 1</span>
+    </footer>
+
+  </main>
+
+  <script>
+    document.getElementById('printDate').textContent =
+      new Date().toLocaleString('id-ID', {
+        day: '2-digit', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+
+    function exportPDF() {
+      const element = document.getElementById('print-area');
+      const opt = {
+        margin: [8, 8, 8, 8],
+        filename: 'Booking-Confirmation-Hotel.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
+  </script>
+
+</body>
+</html>

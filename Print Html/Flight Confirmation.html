@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flight Confirmation - E-Ticket</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #e9ecef;
+      margin: 0;
+      padding: 20px;
+      color: #000;
+    }
+
+    .toolbar {
+      max-width: 1000px;
+      margin: 0 auto 14px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .toolbar button {
+      padding: 9px 16px;
+      border: none;
+      border-radius: 5px;
+      background: #0d6efd;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .toolbar button:hover { background: #0b5ed7; }
+    .toolbar .info {
+      margin-left: auto;
+      font-size: 12px;
+      color: #555;
+      align-self: center;
+    }
+
+    .print-area {
+      background: #fff;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 26px 30px;
+      border-radius: 6px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+    }
+
+    /* ===== HEADER ===== */
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 0;
+    }
+    .header-top .logo {
+      height: 70px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .header-top .company-name {
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: #000;
+      text-align: right;
+      letter-spacing: 0.4px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .line-thick { height: 3px; background: #28583e; width: 100%; }
+    .line-space { height: 6px; background: #fff; width: 100%; }
+
+    /* ===== TITLE ===== */
+    .doc-title {
+      text-align: center;
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 23px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin: 16px 0;
+      padding: 12px 14px;
+      background: #28583e;
+      color: #fff;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+
+    /* ===== ISSUE DATE ===== */
+    .issue-line {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 12px;
+      margin-bottom: 14px;
+      padding-bottom: 6px;
+      border-bottom: 1px dashed #999;
+    }
+    .issue-line .label { color: #555; }
+    .issue-line .value { font-weight: 700; color: #000; }
+
+    /* ===== SECTION CARD ===== */
+    .section {
+      margin-bottom: 16px;
+      border-radius: 3px;
+      overflow: hidden;
+      border: 1px solid #e0e0e0;
+    }
+    .section-title {
+      background: #28583e;
+      color: #fff;
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 8px 12px;
+    }
+
+    /* ===== SEMUA TABEL: FIXED LAYOUT ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      font-family: 'Roboto', Arial, sans-serif;
+      table-layout: fixed;
+    }
+
+    td, th {
+      padding: 8px 10px;
+      vertical-align: top;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    tr:last-child td { border-bottom: none; }
+
+    .label-cell {
+      background: #f4f4f4;
+      color: #555;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      font-weight: 500;
+    }
+    .value-cell {
+      color: #111;
+      font-size: 12px;       /* ← ukuran teks value disamakan */
+      font-weight: 500;
+      background: #fff;
+    }
+    tr:nth-child(even) .value-cell { background: #fafafa; }
+    tr:nth-child(even) .label-cell { background: #efefef; }
+
+    /* Flight Number & PNR tetap di-highlight warna, tapi UKURAN SAMA */
+    .flight-number { font-weight: 700; color: #28583e; }
+    .pnr           { font-weight: 700; color: #28583e; letter-spacing: 1px; }
+    /* .time-big DIHAPUS agar tidak beda ukuran */
+
+    /* ===== GUEST TABLE ===== */
+    .guest-table { table-layout: fixed; }
+    .guest-table th {
+      background: #d9d9d9;
+      color: #000;
+      font-size: 11px;
+      text-align: left;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      padding: 8px 10px;
+      font-weight: 700;
+      border-bottom: 1px solid #bbb;
+    }
+    .guest-table td {
+      border-bottom: 1px solid #e0e0e0;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+    .guest-table tr:nth-child(even) td { background: #f7f7f7; }
+    .guest-table tr:nth-child(odd)  td { background: #ffffff; }
+
+    /* ===== BAGGAGE TABLE ===== */
+    .baggage-table { table-layout: fixed; }
+    .baggage-table th.bg-head {
+      background: #d9d9d9;
+      color: #000;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid #bbb;
+    }
+    .baggage-table td {
+      padding: 8px 10px;
+      vertical-align: top;
+      border-bottom: 1px solid #e0e0e0;
+      background: #fff;
+    }
+    .baggage-table tr:last-child td { border-bottom: none; }
+
+    .baggage-table td.col-no  { text-align: left; font-weight: 700; }
+    .baggage-table td.col-pax { text-align: left; font-weight: 500; }
+    .baggage-table td.col-bag { text-align: left; font-weight: 400; }
+
+    .baggage-detail { margin: 0; padding: 0; line-height: 1.7; display: block; }
+    .baggage-detail .bg-line { display: block; }
+    .baggage-detail .bg-line strong { font-weight: 700; }
+
+    /* ===== PRICE SUMMARY ===== */
+    .price-table td { padding: 8px 12px; font-size: 12px; }
+    .price-table .price-label { text-align: left; font-weight: 500; }
+    .price-table .price-value {
+      text-align: right;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .price-table .sub-label { color: #666; font-size: 11px; font-weight: 400; }
+    .price-table tr.total-row td {
+      background: #113b25;
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 12px;
+      border: none;
+    }
+    .price-table tr.total-row .price-value { font-size: 16px; }
+
+    /* ===== NOTES ===== */
+    .notes-section {
+      background: #113b25;
+      color: #fff;
+      padding: 14px 16px;
+      font-family: 'Roboto', Arial, sans-serif;
+      border-radius: 3px;
+      text-align: left;
+      margin-top: 16px;
+    }
+    .notes-section .notes-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      margin: 0 0 6px 0;
+      text-transform: uppercase;
+    }
+    .notes-section .notes-line {
+      font-size: 11.5px;
+      line-height: 1.5;
+      font-weight: 400;
+      margin: 0 0 4px 0;
+    }
+
+    /* ===== CONTACT LINES ===== */
+    .contact-lines { padding: 0; background: #fff; }
+    .contact-line { height: 3px; background: #113b25; border-radius: 1px; }
+    .contact-line-1 { width: 210px; margin-top: 6px; }
+    .contact-line-2 { width: 255px; margin-top: 4px; margin-bottom: 10px; }
+
+    .contact-info {
+      padding: 0 0 8px 0;
+      background: #fff;
+      font-family: 'Roboto', Arial, sans-serif;
+      color: #000;
+    }
+    .contact-info p { font-size: 11.5px; line-height: 1.5; margin: 0 0 4px 0; }
+
+    /* ===== FOOTER ===== */
+    .doc-footer {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #333;
+      border-top: 1px solid #999;
+      padding-top: 6px;
+      font-family: 'Roboto', Arial, sans-serif;
+    }
+
+    /* ===== PRINT ===== */
+    @media print {
+      @page { size: A4 portrait; margin: 10mm; }
+      body { background: #fff; margin: 0; padding: 0; }
+      .no-print { display: none !important; }
+      .print-area {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        border-radius: 0;
+      }
+      .doc-title,
+      .section-title,
+      .notes-section,
+      .contact-line,
+      .line-thick,
+      .baggage-table th.bg-head,
+      .price-table tr.total-row td {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .guest-table th {
+        background: #d9d9d9 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar no-print">
+    <button onclick="window.print()">🖨️ Print / Save PDF</button>
+    <button onclick="exportPDF()">⬇️ Export PDF</button>
+    <span class="info">Flight Confirmation / E-Ticket</span>
+  </div>
+
+  <main id="print-area" class="print-area">
+
+    <!-- HEADER -->
+    <div class="header-top">
+      <img class="logo" src="Logooci.png" alt="Outventure Cakrawala Indonesia">
+      <div class="company-name">PT OUTVENTURE CAKRAWALA INDONESIA</div>
+    </div>
+    <div class="line-thick"></div>
+    <div class="line-space"></div>
+
+    <h1 class="doc-title">Flight Confirmation</h1>
+
+    <div class="issue-line">
+      <span class="label">Issue Date :</span>
+      <span class="value" contenteditable="true">September 11, 2026</span>
+    </div>
+
+    <!-- ===== FLIGHT DETAILS ===== -->
+    <div class="section">
+      <div class="section-title">Flight Details</div>
+      <table>
+        <colgroup>
+          <col style="width: 30%;">
+          <col style="width: 70%;">
+        </colgroup>
+        <tr>
+          <td class="label-cell">Departure Date</td>
+          <td class="value-cell" contenteditable="true">Sat, 12 Sep 2026</td>
+        </tr>
+        <tr>
+          <td class="label-cell">Time</td>
+          <td class="value-cell" contenteditable="true">05:40</td>
+        </tr>
+        <tr>
+          <td class="label-cell">Flight Number</td>
+          <td class="value-cell flight-number" contenteditable="true">Super Air Jet, IU 937</td>
+        </tr>
+        <tr>
+          <td class="label-cell">Departure At</td>
+          <td class="value-cell" contenteditable="true">
+            <strong>05:40</strong> — Hang Nadim International Airport - <strong>BTH</strong>
+          </td>
+        </tr>
+        <tr>
+          <td class="label-cell">Arrival At</td>
+          <td class="value-cell" contenteditable="true">
+            <strong>06:55</strong> — Minangkabau International Airport - <strong>PDG</strong>
+          </td>
+        </tr>
+        <tr>
+          <td class="label-cell">Cabin Class</td>
+          <td class="value-cell" contenteditable="true">ECONOMY</td>
+        </tr>
+        <tr>
+          <td class="label-cell">Airline PNR / Booking Reference</td>
+          <td class="value-cell pnr" contenteditable="true">QINVEB</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- GUEST DETAILS -->
+    <div class="section">
+      <div class="section-title">Guest Details</div>
+      <table class="guest-table">
+        <colgroup>
+          <col style="width: 6%;">
+          <col style="width: 44%;">
+          <col style="width: 32%;">
+          <col style="width: 18%;">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Ticket No</th>
+            <th>Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td contenteditable="true">1</td>
+            <td contenteditable="true">OFRIZON / OFRIZON, MR</td>
+            <td contenteditable="true">9382116748554</td>
+            <td contenteditable="true">Adult</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- BAGGAGE -->
+    <div class="section">
+      <div class="section-title">Baggage</div>
+      <table class="baggage-table">
+        <colgroup>
+          <col style="width: 6%;">
+          <col style="width: 44%;">
+          <col style="width: 50%;">
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="bg-head" colspan="2" contenteditable="true">Departing Flight</th>
+            <th class="bg-head" contenteditable="true">BTH - PDG</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-no"  contenteditable="true">1</td>
+            <td class="col-pax" contenteditable="true">MR. OFRIZON OFRIZON</td>
+            <td class="col-bag" contenteditable="true">
+              <span class="baggage-detail">
+                <span class="bg-line"><strong>7 Kg</strong> carry on Cabin</span>
+                <span class="bg-line"><strong>10 Kg</strong> Checked Baggage</span>
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PRICE SUMMARY -->
+    <div class="section">
+      <div class="section-title">Price Summary</div>
+      <table class="price-table">
+        <colgroup>
+          <col style="width: 70%;">
+          <col style="width: 30%;">
+        </colgroup>
+        <tr>
+          <td class="price-label">
+            Flight<br>
+            <span class="sub-label">(Inc. Taxes &amp; Fees)</span>
+          </td>
+          <td class="price-value" contenteditable="true">IDR 1.307.247</td>
+        </tr>
+        <tr>
+          <td class="price-label">
+            Add on(s)<br>
+            <span class="sub-label">Seat Option</span>
+          </td>
+          <td class="price-value" contenteditable="true">IDR 195.000</td>
+        </tr>
+        <tr class="total-row">
+          <td class="price-label" style="color:#fff;">Total Amount</td>
+          <td class="price-value" contenteditable="true">IDR 1.502.247</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- NOTES -->
+    <div class="notes-section">
+      <p class="notes-title">Important Notes:</p>
+      <p class="notes-line">Please arrive at the airport at least <strong>2 hours</strong> before departure for domestic flights.</p>
+      <p class="notes-line">Bring a valid ID (KTP / Passport) matching the passenger name on this ticket.</p>
+      <p class="notes-line">Check-in counter closes <strong>45 minutes</strong> before scheduled departure.</p>
+      <p class="notes-line">For further information, please contact us using the details below.</p>
+
+      <div style="margin-top: 15px;">
+        <p class="notes-title">BANK ACCOUNT</p>
+        <p class="notes-line">PT OUTVENTURE CAKRAWALA INDONESIA</p>
+        <p class="notes-line">BANK MANDIRI 127-00-1445-2823</p>
+      </div>
+    </div>
+
+    <!-- CONTACT LINES -->
+    <div class="contact-lines">
+      <div class="contact-line contact-line-1"></div>
+      <div class="contact-line contact-line-2"></div>
+    </div>
+
+    <div class="contact-info">
+      <p>Menara 165, Lantai 4</p>
+      <p>Jl. TB. Simatupang Kav.1, Pasar Minggu, Jakarta Selatan</p>
+      <p>outventurecakrawalaidn@gmail.com</p>
+    </div>
+
+    <footer class="doc-footer">
+      <span>Dicetak: <span id="printDate"></span></span>
+      <span>Halaman 1 dari 1</span>
+    </footer>
+
+  </main>
+
+  <script>
+    document.getElementById('printDate').textContent =
+      new Date().toLocaleString('id-ID', {
+        day: '2-digit', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+
+    function exportPDF() {
+      const element = document.getElementById('print-area');
+      const opt = {
+        margin: [8, 8, 8, 8],
+        filename: 'Flight-Confirmation.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
+  </script>
+
+</body>
+</html>
